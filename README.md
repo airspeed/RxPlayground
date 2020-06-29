@@ -6,6 +6,6 @@ Boilerplate for testing `RxSwift` operators in swift playgrounds:
 3. Play with operators! 🎉
 
 Works with:
-*RxSwift*
-*RxCocoa*
-*RxSwiftExt*
+- *RxSwift*
+- *RxCocoa*
+- *RxSwiftExt*
