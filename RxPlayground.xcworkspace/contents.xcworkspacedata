@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:Distinct.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Slider2.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Text+Rx.playground">
+   </FileRef>
+   <FileRef
+      location = "group:BindingTest.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Leaks.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Single.playground">
+   </FileRef>
+   <FileRef
+      location = "group:BehaviorRelay.playground">
+   </FileRef>
+   <FileRef
+      location = "group:From+Completion.playground">
+   </FileRef>
+   <FileRef
+      location = "group:ToArray.playground">
+   </FileRef>
+   <FileRef
+      location = "group:CollectionView.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Just.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Merge.playground">
+   </FileRef>
+   <FileRef
+      location = "group:CombineLatest.playground">
+   </FileRef>
+   <FileRef
+      location = "group:PublishSubject.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Retry.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Throw.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Empty.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Materialize.playground">
+   </FileRef>
+   <FileRef
+      location = "group:ControlEvent.playground">
+   </FileRef>
+   <FileRef
+      location = "group:Take.playground">
+   </FileRef>
+   <FileRef
+      location = "group:WithLatestFrom.playground">
+   </FileRef>
+   <FileRef
+      location = "group:RxPlayground.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:Pods/Pods.xcodeproj">
+   </FileRef>
+</Workspace>
