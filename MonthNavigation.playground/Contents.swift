@@ -11,6 +11,58 @@ extension UIColor {
     }
 }
 
+final class TransparentGradientView: UIView {
+    enum Direction {
+        case horizontal
+        case vertical
+        case diagonal
+        case horizontalReversed
+        case verticalReversed
+        case diagonalReversed
+
+        var startPoint: CGPoint {
+            switch self {
+            case .horizontalReversed: return CGPoint(x: 1.0, y: 0.0)
+            case .verticalReversed: return CGPoint(x: 0.0, y: 1.0)
+            case .diagonalReversed: return CGPoint(x: 1.0, y: 1.0)
+            default: return .zero
+            }
+        }
+
+        var endPoint: CGPoint {
+            switch self {
+            case .horizontal: return CGPoint(x: 1.0, y: 0.0)
+            case .vertical: return CGPoint(x: 0.0, y: 1.0)
+            case .diagonal: return CGPoint(x: 1.0, y: 1.0)
+            default: return .zero
+            }
+        }
+    }
+
+    init(frame: CGRect, direction: Direction = .horizontal) {
+        super.init(frame: frame)
+        self.configure(direction: direction)
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        self.configure(direction: .horizontal)
+    }
+    
+    private func configure(direction: Direction) {
+        self.backgroundColor = .systemBackground
+        let gradientMaskLayer = CAGradientLayer()
+        gradientMaskLayer.frame = self.bounds
+
+        gradientMaskLayer.colors = [UIColor.white.cgColor, UIColor.clear.cgColor]
+        gradientMaskLayer.locations = [0.1, 0.9]
+        gradientMaskLayer.startPoint = direction.startPoint
+        gradientMaskLayer.endPoint = direction.endPoint
+
+        self.layer.mask = gradientMaskLayer
+    }
+}
+
 final class MonthNavigationView: UIView, UICollectionViewDelegate {
     
     // MARK: Inline types
@@ -21,6 +73,8 @@ final class MonthNavigationView: UIView, UICollectionViewDelegate {
             let label = UILabel(frame: self.bounds)
             label.textAlignment = .center
             label.font = .systemFont(ofSize: 14)
+            label.layer.borderColor = UIColor.systemBlue.cgColor
+            label.layer.cornerRadius = 20
             self.addSubview(label)
             return label
         }()
@@ -43,7 +97,6 @@ final class MonthNavigationView: UIView, UICollectionViewDelegate {
     lazy var months: [Month] = {
         var calendar = Calendar.current
         calendar.locale = Locale.autoupdatingCurrent
-        calendar.locale = .init(identifier: "de-DE")
         return calendar.shortStandaloneMonthSymbols.enumerated().map { offset, name in
             Month(index: offset,
                   symbol: name,
@@ -70,7 +123,9 @@ final class MonthNavigationView: UIView, UICollectionViewDelegate {
                 ),
                 subitems: [item]
             )
-            return NSCollectionLayoutSection(group: group)
+            let section = NSCollectionLayoutSection(group: group)
+            section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+            return section
         }
         layout.configuration = self.collectionViewLayoutConfiguration
         return layout
@@ -83,14 +138,15 @@ final class MonthNavigationView: UIView, UICollectionViewDelegate {
                                                           for: indexPath) as! MonthCell
             cell.monthNameLabel.text = month.symbol.uppercased()
             cell.monthNameLabel.textColor = month.isSelected ? .systemBlue : .darkText
-            cell.monthNameLabel.layer.borderColor = UIColor.systemBlue.cgColor
-            cell.monthNameLabel.layer.cornerRadius = cell.monthNameLabel.bounds.size.height / 2
             cell.monthNameLabel.layer.borderWidth = month.isSelected ? 1 : 0
             return cell
     })
 
     lazy private var collectionView: UICollectionView = {
-        let collectionView = UICollectionView(frame: self.bounds, collectionViewLayout: self.collectionViewLayout)
+        let collectionView = UICollectionView(frame: CGRect(x: 0,
+                                                            y: self.collectionViewVerticalInset,
+                                                            width: self.bounds.size.width,
+                                                            height: self.bounds.size.height - 2 * self.collectionViewVerticalInset), collectionViewLayout: self.collectionViewLayout)
         collectionView.backgroundColor = .systemBackground
         collectionView.register(MonthCell.self, forCellWithReuseIdentifier: MonthCell.reuseIdentifier)
         collectionView.isPagingEnabled = true
@@ -104,6 +160,7 @@ final class MonthNavigationView: UIView, UICollectionViewDelegate {
     var observeSelectedMonth: Observable<Int> {
         self.selectedMonthSubject.asObservable()
     }
+    var collectionViewVerticalInset: CGFloat { 10 }
     
     // MARK: Lifecycle
     
@@ -127,7 +184,22 @@ final class MonthNavigationView: UIView, UICollectionViewDelegate {
     private func configureUI() {
         self.collectionView.dataSource = self.dataSource
         self.collectionView.delegate = self
+        self.configureGradientViews()
         self.reload()
+    }
+    
+    private func configureGradientViews() {
+        let gradientViewSize = CGSize(width: 28, height: self.bounds.size.height)
+        let gradientViewLeftFrame = CGRect(origin: .zero, size: gradientViewSize)
+        let gradientViewRightFrame = CGRect(origin: .zero, size: gradientViewSize)
+        let gradientViewLeft = TransparentGradientView(frame: gradientViewLeftFrame,
+                                                       direction: .horizontal)
+        let gradientViewRight = TransparentGradientView(frame: CGRect(x: self.bounds.size.width - 28, y: 0, width: gradientViewSize.width, height: gradientViewSize.height),
+                                                       direction: .horizontalReversed)
+        gradientViewLeft.backgroundColor = .systemBackground
+        gradientViewRight.backgroundColor = .systemBackground
+        self.addSubview(gradientViewLeft)
+        self.addSubview(gradientViewRight)
     }
     
     private func reload() {
@@ -141,19 +213,19 @@ final class MonthNavigationView: UIView, UICollectionViewDelegate {
         let months = self.months
         self.observeSelectedMonth
             .do(onNext: { [weak self] selectedMonth in
+                self?.collectionView.scrollToItem(at: IndexPath(item: selectedMonth,
+                                                               section: 0),
+                                                  at: .centeredHorizontally,
+                                                  animated: true)
+            })
+            .debounce(RxTimeInterval.milliseconds(250), scheduler: MainScheduler.asyncInstance)
+            .subscribe(onNext: { [weak self] selectedMonth in
                 self?.months = months.reduce([Month]()) { result, nextMonth in
                     var nextElement = nextMonth
                     nextElement.isSelected = nextMonth.index == selectedMonth
                     return result + [nextElement]
                 }
                 self?.reload()
-            })
-            .observeOn(MainScheduler.asyncInstance)
-            .subscribe(onNext: { [weak self] selectedMonth in
-                self?.collectionView.scrollToItem(at: IndexPath(item: selectedMonth,
-                                                               section: 0),
-                                                  at: .centeredHorizontally,
-                                                  animated: true)
             })
             .disposed(by: self.disposeBag)
     }
@@ -176,7 +248,7 @@ extension Reactive where Base: MonthNavigationView {
     }
 }
 
-let rect = CGRect(x: 0, y: 0, width: 375, height: 40)
+let rect = CGRect(x: 0, y: 0, width: 375, height: 60)
 let monthNavigation = MonthNavigationView(frame: rect)
 PlaygroundPage.current.liveView = monthNavigation
 
